@@ -1,0 +1,6 @@
+@RDS.API_HostAddress = http://localhost:5232
+
+GET {{RDS.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

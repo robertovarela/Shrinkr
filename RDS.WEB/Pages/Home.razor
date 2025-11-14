@@ -1,0 +1,128 @@
+﻿@page "/"
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Encurtador de URL</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+
+    <div class="d-flex justify-center mb-6">
+        <img src="imagens/logo.png" alt="Logo" style="max-width: 200px;"/>
+    </div>
+
+    <MudPaper Class="pa-4" Elevation="3">
+        <MudText Typo="Typo.h5" Align="Align.Center" GutterBottom="true">Cole a URL para encurtar</MudText>
+
+        <MudTextField @bind-Value="UrlInput" Label="URL Longa" Variant="Variant.Outlined" Immediate="true"
+                      Placeholder="https://exemplo.com/um/caminho/muito/longo" OnBlur="@ValidateUrl"/>
+
+        @if (!string.IsNullOrEmpty(ValidationMessage))
+        {
+            <MudText Class="mt-2" Color="Color.Error" Typo="Typo.body2">@ValidationMessage</MudText>
+        }
+
+        <div class="d-flex justify-center mt-4">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="@GenerateShortUrl"
+                       Disabled="@IsProcessing"
+                       Size="Size.Large"
+                       Style="width: 100%;">
+                @if (IsProcessing)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mr-2"/>
+                    <span>Gerando...</span>
+                }
+                else
+                {
+                    <span>Gerar URL Curta</span>
+                }
+            </MudButton>
+        </div>
+
+        @if (!string.IsNullOrEmpty(ShortUrl))
+        {
+            <div class="mt-6">
+                <MudText Typo="Typo.body1" GutterBottom="true">Sua URL curta está pronta:</MudText>
+                <MudTextField Value="@ShortUrl" ReadOnly="true" Variant="Variant.Outlined"/>
+                <div class="d-flex justify-end mt-2">
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Primary"
+                               OnClick="@CopyToClipboard">
+                        Copiar
+                    </MudButton>
+                </div>
+            </div>
+        }
+    </MudPaper>
+
+</MudContainer>
+
+
+@code {
+    private string UrlInput { get; set; } = string.Empty;
+    private string ShortUrl { get; set; } = string.Empty;
+    private string ValidationMessage { get; set; } = string.Empty;
+    private bool IsProcessing { get; set; }
+
+    private async Task GenerateShortUrl()
+    {
+        if (string.IsNullOrWhiteSpace(UrlInput) || !string.IsNullOrEmpty(ValidationMessage))
+        {
+            ValidationMessage = "Por favor, insira uma URL válida.";
+            return;
+        }
+
+        IsProcessing = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("API");
+            var response = await client.PostAsJsonAsync("shorten", new { LongUrl = UrlInput });
+
+            if (response.IsSuccessStatusCode)
+            {
+                ShortUrl = await response.Content.ReadAsStringAsync();
+                ValidationMessage = string.Empty;
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                ValidationMessage = $"Falha ao gerar URL curta: {errorContent}";
+            }
+        }
+        catch (Exception ex)
+        {
+            ValidationMessage = "Ocorreu um erro de conexão. A API está rodando? " + ex.Message;
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    private void ValidateUrl()
+    {
+        ValidationMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(UrlInput))
+        {
+            return; // Não valida campo vazio até que o botão seja pressionado
+        }
+
+        if (!UrlInput.StartsWith("http://") && !UrlInput.StartsWith("https://"))
+        {
+            ValidationMessage = "A URL deve começar com https:// ou http://.";
+        }
+        else if (!Uri.IsWellFormedUriString(UrlInput, UriKind.Absolute))
+        {
+            ValidationMessage = "A URL informada não parece ser válida.";
+        }
+    }
+
+    private async Task CopyToClipboard()
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", ShortUrl);
+        Snackbar.Add("URL copiada para a área de transferência!", Severity.Success);
+    }
+}

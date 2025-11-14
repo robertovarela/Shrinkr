@@ -1,0 +1,28 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider/>
+<MudPopoverProvider/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudText Typo="Typo.h5" Class="ml-4">Encurtador de URL</MudText>
+    </MudAppBar>
+
+    <MudMainContent Class="pt-16 pa-4">
+        @Body
+    </MudMainContent>
+
+    <MudAppBar Bottom="true" Elevation="1" Style="height: 35px;">
+        <MudSpacer/>
+        <MudText>&copy; 2025 Shrinkr</MudText>
+        <MudSpacer/>
+    </MudAppBar>
+</MudLayout>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Ocorreu um erro.
+    <a href="." class="reload">Recarregar</a>
+    <span class="dismiss">🗙</span>
+</div>
