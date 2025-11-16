@@ -110,7 +110,7 @@
             return; // Não valida campo vazio até que o botão seja pressionado
         }
 
-        if (!UrlInput.StartsWith("http://") && !UrlInput.StartsWith("https://"))
+        if (!UrlInput.ToLower().StartsWith("http://") && !UrlInput.ToLower().StartsWith("https://"))
         {
             ValidationMessage = "A URL deve começar com https:// ou http://.";
         }

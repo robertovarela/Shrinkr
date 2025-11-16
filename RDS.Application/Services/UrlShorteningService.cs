@@ -14,12 +14,14 @@ namespace RDS.Application.Services
     {
         public async Task<CreateShortUrlResult> CreateShortUrlAsync(string longUrl, string scheme, string host)
         {
-            if (!await ValidateUrlAsync(longUrl))
+            var normalizedUrl = NormalizeUrl(longUrl);
+
+            if (!await ValidateUrlAsync(normalizedUrl))
             {
                 return CreateShortUrlResult.Failure("A URL fornecida não é válida.");
             }
 
-            var urlId = await AddLongUrlAsync(longUrl);
+            var urlId = await AddLongUrlAsync(normalizedUrl);
             if (urlId == 0)
             {
                 return CreateShortUrlResult.Failure("Não foi possível salvar a URL no banco de dados.");
@@ -31,7 +33,8 @@ namespace RDS.Application.Services
             return CreateShortUrlResult.Success(shortUrl);
         }
 
-        public async Task<HandleShortUrlResponse?> HandleShortUrlRequestAsync(string shortCode, IHeaderDictionary headers)
+        public async Task<HandleShortUrlResponse?> HandleShortUrlRequestAsync(
+            string shortCode, IHeaderDictionary headers)
         {
             ReadShortUrlDto? url = null;
             long id = 0;
@@ -50,7 +53,8 @@ namespace RDS.Application.Services
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Erro ao decodificar o shortCode '{ShortCode}' ou buscar a URL. Pode ser um shortCode inválido.", shortCode);
+                logger.LogWarning(ex, "Erro ao decodificar o shortCode '{ShortCode}' ou buscar a URL. " +
+                                      "Pode ser um shortCode inválido.", shortCode);
                 return null;
             }
 
@@ -80,6 +84,29 @@ namespace RDS.Application.Services
         }
 
         // Métodos auxiliares privados
+        private string NormalizeUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+            {
+                return url;
+            }
+
+            // Converte apenas o início do esquema para minúsculas para evitar problemas com URLs case-sensitive.
+            // Ex: http://MyDomain.com/MyPage se torna http://MyDomain.com/MyPage
+            // Ex: Https://... se torna https://...
+            var schemeEndIndex = url.IndexOf("://", StringComparison.Ordinal);
+            if (schemeEndIndex > 0)
+            {
+                var scheme = url.Substring(0, schemeEndIndex).ToLowerInvariant();
+                var restOfUrl = url.Substring(schemeEndIndex);
+                return scheme + restOfUrl;
+            }
+
+            // Se não encontrar um esquema, retorna a URL como está para não modificar
+            // partes que podem ser case-sensitive.
+            return url;
+        }
+
         private Task<bool> ValidateUrlAsync(string longUrl)
         {
             return Task.FromResult(Uri.TryCreate(longUrl, UriKind.Absolute, out _));

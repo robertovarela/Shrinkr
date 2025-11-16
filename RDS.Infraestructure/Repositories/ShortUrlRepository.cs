@@ -15,11 +15,6 @@ namespace RDS.Infraestructure.Repositories
             return shortUrl.Id;
         }
 
-        public async Task<ReadShortUrlDto?> GetByIdAsyncOld(long id)
-        {
-            var result = await context.ShortUrls.FindAsync(id);
-            return result == null ? null : new ReadShortUrlDto {LongUrl = result.LongUrl };
-        }
         public async Task<ReadShortUrlDto?> GetByIdAsync(long id)
         {
             // Carrega somente a URL Longa em vez de trazer o registro completo

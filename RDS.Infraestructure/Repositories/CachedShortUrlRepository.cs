@@ -50,7 +50,8 @@ namespace RDS.Infraestructure.Repositories
             }
             else
             {
-                // Evite sobrecarga de cache para chaves ausentes: armazene o marcador nulo em cache por um curto período.
+                // Evite sobrecarga de cache para chaves ausentes:
+                // armazene o marcador nulo em cache por um curto período.
                 logger.LogDebug("ShortUrl id={Id} not found in database, caching null for 30 seconds", id);
                 cache.Set(CacheKey(id), null as ShortUrl, new MemoryCacheEntryOptions
                 {
